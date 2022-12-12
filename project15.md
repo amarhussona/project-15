@@ -280,3 +280,86 @@ vi /etc/httpd/conf.d/ssl.conf
 
 ![ssl conf](./images/43_edit_ssl_conf.png)
 
+Create an AMI out of the EC2 instances:
+
+In EC2 dashboard, select nginx -> actions -> image and templates -> create image
+
+![ami](./images/44_create_image_webserver.png)
+
+Configure Target Groups:
+
+![target groups](./images/45_create_nginx_target_group.png)
+
+Configure Applipcation Load balancers (ALB) (one External, One Internal)
+Application Load Balancer To Route Traffic To NGINX
+
+Nginx EC2 Instances will have configurations that accepts incoming traffic only from Load Balancers. No request should go directly to Nginx servers. With this kind of setup, we will benefit from intelligent routing of requests from the ALB to Nginx servers across the 2 Availability Zones. We will also be able to offload SSL/TLS certificates on the ALB instead of Nginx. Therefore, Nginx will be able to perform faster since it will not require extra compute resources to valifate certificates for every request.
+
+![load balancer](./images/46_create_load_balancer_mapping.png)
+
+Create an Internet facing ALB
+Ensure that it listens on HTTPS protocol (TCP port 443)
+Ensure the ALB is created within the appropriate VPC | AZ | Subnets
+Choose the Certificate from ACM
+Select Security Group
+Select Nginx Instances as the target group
+
+![load balancer](./images/46_create_load_balancer_target_group.png)
+
+Ensure that it listens on HTTPS protocol (TCP port 443)
+Ensure the ALB is created within the appropriate VPC | AZ | Subnets
+Choose the Certificate from ACM
+Select Security Group
+Select webserver Instances as the target group
+Ensure that health check passes for the target group
+
+![rule](./images/47_add_rule.png)
+
+Create Launch Templates
+
+Bastion Launch Template:
+
+![template](./images/48_create_launch_template1.png)
+![bastion](./images/48_create_launch_template2.png)
+
+Bastion Launch Template User Data:
+
+```
+#!/bin/bash 
+yum install -y mysql 
+yum install -y git tmux 
+yum install -y ansible
+```
+
+Ngnix Launch Template and user Data:
+
+![nginx](./images/48_create_launch_template4_nginx_userdata.png)
+
+Wordpress Launch Template:
+
+![wordpress](./images/48_create_launch_template4_wordpress_userdata.png)
+
+Tooling launch Template and user Data:
+
+![tooling template](./images/49_launch_template_tooling.png)
+
+Configure Auto Scaling Groups:
+
+Configure Autoscaling group For Bastion
+
+![autoscaling](./images/50_create_auto_scaling.png)
+
+Configure Autoscaling Group For Ngnix:
+
+![autoscaling](./images/51_auto_scaling_group_nginx.png)
+
+Configure Autoscaling Group For Wordpress:
+
+Create wordpressdb and toolingdb on Kebs-Bastion launch template
+
+![db](./images/52_create_dbs.png)
+
+Checks on wordpress server:
+
+![health](./images/54.png)
+
